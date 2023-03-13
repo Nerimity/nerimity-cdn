@@ -55,7 +55,7 @@ app.get("/*", async (req, res, next) => {
     res.status(404).end();
   });
   
-  gmInstance(stream).selectFrame(0).stream("webp", (err, stdout) => {
+  gmInstance(stream).selectFrame(0).stream("png", (err, stdout) => {
     if (err) {
       console.log(err)
       return next();
