@@ -47,18 +47,22 @@ app.get("/*", async (req, res, next) => {
   if (req.path.includes("../")) return next();
   const fullPath = path.join(publicDir, req.path);
 
-  res.set('Cache-Control', 'public, max-age=31536000');
-  res.set('Accept-Ranges', 'bytes');
-  res.header("Content-Type", "image/webp");
-
+  
   const stream =  fs.createReadStream(fullPath);
-
-  stream.on('error', () => {
+  
+  stream.on('error', (err) => {
+    console.log(err)
     res.status(404).end();
   });
-
+  
   gmInstance(stream).selectFrame(0).stream("webp", (err, stdout) => {
-    if (err) return next();
+    if (err) {
+      console.log(err)
+      return next();
+    }
+    res.set('Cache-Control', 'public, max-age=31536000');
+    res.set('Accept-Ranges', 'bytes');
+    res.header("Content-Type", "image/webp");
     stdout.pipe(res)
   })
 
