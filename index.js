@@ -22,6 +22,7 @@ const __dirname = path.dirname(__filename);
 
 const publicDir = path.join(__dirname, 'public');
 const avatarDir = path.join(publicDir, 'avatars');
+const bannerDir = path.join(publicDir, 'banners');
 
 
 if (!fs.existsSync(avatarDir)) {
@@ -135,6 +136,73 @@ app.post("/avatar", connectBusboy({immediate: true, limits: {files: 1, fileSize:
           return res.status(403).json(Errors.COMPRESS_ERROR);
         }
         res.status(200).json({path: path.join("avatars", data.id, fileId + extName)});
+      })
+  });
+
+  req.busboy.on('field', (name, value, info) => {
+    data[name] = value;
+  });
+
+  req.busboy.on('close', () => {
+    if (data.file?.truncated) {
+      res.status(403).json(Errors.MAX_SIZE_LIMIT);
+      fs.unlink(fileDir, () => {});
+      return;
+    }
+  })
+
+  req.busboy.on('finish', () => {
+    if (!data.file) {
+      res.status(403).json(Errors.NO_FILE);
+    }
+  });
+})
+
+app.post("/banner", connectBusboy({immediate: true, limits: {files: 1, fileSize: 7840000}}), (req, res) => {
+  const data = {
+    id: null,
+    secret: null,
+    file: null,
+  }
+
+  let fileDir;
+
+  req.busboy.on('file', async (name, file, info) => {
+    if (data.secret !== config.SECRET) {
+      return res.status(403).json(Errors.INVALID_SECRET);
+    }
+    
+    if (data.file) return res.status(403).end();
+    if (!data.id) return res.status(403).json(Errors.MISSING_ID);
+    data.file = file;
+
+    let extName = path.extname(info.filename);
+    if (extName !== ".gif") {
+      extName = ".webp"
+    }
+
+    const fileId = flake.gen();
+    fileDir = path.join(bannerDir,  data.id, fileId + extName);
+
+    if (!isImage(info.mimeType)) {
+      return res.status(403).json(Errors.INVALID_IMAGE);
+    }
+
+    await fs.promises.rm(path.join(bannerDir, data.id), {recursive: true, force: true})
+    await fs.promises.mkdir(path.join(bannerDir, data.id))
+
+    
+
+    gmInstance(file)
+      .resize(1920, 1080, ">")
+      .quality(90)
+      .autoOrient()
+      .write(fileDir, (err) => {
+        if (err) {
+          console.log(err, fileDir);
+          return res.status(403).json(Errors.COMPRESS_ERROR);
+        }
+        res.status(200).json({path: path.join("banners", data.id, fileId + extName)});
       })
   });
 
