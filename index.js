@@ -28,6 +28,9 @@ const bannerDir = path.join(publicDir, 'banners');
 if (!fs.existsSync(avatarDir)) {
   fs.mkdirSync(avatarDir, {recursive: true});
 }
+if (!fs.existsSync(bannerDir)) {
+  fs.mkdirSync(bannerDir, {recursive: true});
+}
 
 const app = express();
 
