@@ -7,6 +7,13 @@ import config from './config.js';
 import serveStatic from 'serve-static';
 import fid from '@brecert/flakeid';
 
+
+const DirNames = {
+  ProfileAvatar: 'avatars',
+  ProfileBanner: 'profile_banners'
+}
+
+
 const FlakeId = fid.default;
 
 const flake = new FlakeId({
@@ -20,16 +27,16 @@ const gmInstance = gm.subClass({ imageMagick: true });
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const publicDir = path.join(__dirname, 'public');
-const avatarDir = path.join(publicDir, 'avatars');
-const bannerDir = path.join(publicDir, 'profile_banners');
+const publicDirPath = path.join(__dirname, 'public');
+const avatarDirPath = path.join(publicDirPath, DirNames.ProfileAvatar);
+const bannerDirPath = path.join(publicDirPath, DirNames.ProfileBanner);
 
 
-if (!fs.existsSync(avatarDir)) {
-  fs.mkdirSync(avatarDir, {recursive: true});
+if (!fs.existsSync(avatarDirPath)) {
+  fs.mkdirSync(avatarDirPath, {recursive: true});
 }
-if (!fs.existsSync(bannerDir)) {
-  fs.mkdirSync(bannerDir, {recursive: true});
+if (!fs.existsSync(bannerDirPath)) {
+  fs.mkdirSync(bannerDirPath, {recursive: true});
 }
 
 const app = express();
@@ -49,7 +56,7 @@ app.get("/*", async (req, res, next) => {
   const type = req.query.type;
   if (!type) return next();
   if (req.path.includes("../")) return next();
-  const fullPath = path.join(publicDir, req.path);
+  const fullPath = path.join(publicDirPath, req.path);
 
   
   const stream =  fs.createReadStream(fullPath);
@@ -75,7 +82,7 @@ app.get("/*", async (req, res, next) => {
 })
 
 
-app.use(serveStatic(publicDir, {
+app.use(serveStatic(publicDirPath, {
   maxAge: '1d',
   setHeaders: headerControl
 }))
@@ -106,15 +113,15 @@ app.post("/avatar", connectBusboy({immediate: true, limits: {files: 1, fileSize:
     }
 
     const fileId = flake.gen();
-    fileDir = path.join(avatarDir,  data.id, fileId + extName);
+    fileDir = path.join(avatarDirPath,  data.id, fileId + extName);
 
     if (!isImage(info.mimeType)) {
       return res.status(403).json(Errors.INVALID_IMAGE);
     }
     const size = 200;
 
-    await fs.promises.rm(path.join(avatarDir, data.id), {recursive: true, force: true})
-    await fs.promises.mkdir(path.join(avatarDir, data.id))
+    await fs.promises.rm(path.join(avatarDirPath, data.id), {recursive: true, force: true})
+    await fs.promises.mkdir(path.join(avatarDirPath, data.id))
 
     
 
@@ -138,7 +145,7 @@ app.post("/avatar", connectBusboy({immediate: true, limits: {files: 1, fileSize:
           console.log(err, fileDir);
           return res.status(403).json(Errors.COMPRESS_ERROR);
         }
-        res.status(200).json({path: path.join("avatars", data.id, fileId + extName)});
+        res.status(200).json({path: path.join(DirNames.ProfileAvatar, data.id, fileId + extName)});
       })
   });
 
@@ -185,14 +192,14 @@ app.post("/banner", connectBusboy({immediate: true, limits: {files: 1, fileSize:
     }
 
     const fileId = flake.gen();
-    fileDir = path.join(bannerDir,  data.id, fileId + extName);
+    fileDir = path.join(bannerDirPath,  data.id, fileId + extName);
 
     if (!isImage(info.mimeType)) {
       return res.status(403).json(Errors.INVALID_IMAGE);
     }
 
-    await fs.promises.rm(path.join(bannerDir, data.id), {recursive: true, force: true})
-    await fs.promises.mkdir(path.join(bannerDir, data.id))
+    await fs.promises.rm(path.join(bannerDirPath, data.id), {recursive: true, force: true})
+    await fs.promises.mkdir(path.join(bannerDirPath, data.id))
 
     
 
@@ -205,7 +212,7 @@ app.post("/banner", connectBusboy({immediate: true, limits: {files: 1, fileSize:
           console.log(err, fileDir);
           return res.status(403).json(Errors.COMPRESS_ERROR);
         }
-        res.status(200).json({path: path.join("profile_banners", data.id, fileId + extName)});
+        res.status(200).json({path: path.join(DirNames.ProfileBanner, data.id, fileId + extName)});
       })
   });
 
