@@ -22,7 +22,7 @@ const __dirname = path.dirname(__filename);
 
 const publicDir = path.join(__dirname, 'public');
 const avatarDir = path.join(publicDir, 'avatars');
-const bannerDir = path.join(publicDir, 'banners');
+const bannerDir = path.join(publicDir, 'profile_banners');
 
 
 if (!fs.existsSync(avatarDir)) {
@@ -205,7 +205,7 @@ app.post("/banner", connectBusboy({immediate: true, limits: {files: 1, fileSize:
           console.log(err, fileDir);
           return res.status(403).json(Errors.COMPRESS_ERROR);
         }
-        res.status(200).json({path: path.join("banners", data.id, fileId + extName)});
+        res.status(200).json({path: path.join("profile_banners", data.id, fileId + extName)});
       })
   });
 
