@@ -6,11 +6,12 @@ import connectBusboy from 'connect-busboy';
 import config from './config.js';
 import serveStatic from 'serve-static';
 import fid from '@brecert/flakeid';
-
+import sharp from 'sharp';
 
 const DirNames = {
   ProfileAvatar: 'avatars',
-  ProfileBanner: 'profile_banners'
+  ProfileBanner: 'profile_banners',
+  Attachments: 'attachments',
 }
 
 
@@ -28,15 +29,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const publicDirPath = path.join(__dirname, 'public');
-const avatarDirPath = path.join(publicDirPath, DirNames.ProfileAvatar);
-const bannerDirPath = path.join(publicDirPath, DirNames.ProfileBanner);
+const avatarsDirPath = path.join(publicDirPath, DirNames.ProfileAvatar);
+const bannersDirPath = path.join(publicDirPath, DirNames.ProfileBanner);
+const attachmentsDirPath = path.join(publicDirPath, DirNames.Attachments);
 
 
-if (!fs.existsSync(avatarDirPath)) {
-  fs.mkdirSync(avatarDirPath, {recursive: true});
+if (!fs.existsSync(avatarsDirPath)) {
+  fs.mkdirSync(avatarsDirPath, {recursive: true});
 }
-if (!fs.existsSync(bannerDirPath)) {
-  fs.mkdirSync(bannerDirPath, {recursive: true});
+if (!fs.existsSync(bannersDirPath)) {
+  fs.mkdirSync(bannersDirPath, {recursive: true});
 }
 
 const app = express();
@@ -89,7 +91,7 @@ app.use(serveStatic(publicDirPath, {
 
 
 
-app.post("/avatar", connectBusboy({immediate: true, limits: {files: 1, fileSize: 7840000}}), (req, res) => {
+app.post("/avatars", connectBusboy({immediate: true, limits: {files: 1, fileSize: 7840000}}), (req, res) => {
   const data = {
     id: null,
     secret: null,
@@ -113,15 +115,15 @@ app.post("/avatar", connectBusboy({immediate: true, limits: {files: 1, fileSize:
     }
 
     const fileId = flake.gen();
-    fileDir = path.join(avatarDirPath,  data.id, fileId + extName);
+    fileDir = path.join(avatarsDirPath,  data.id, fileId + extName);
 
     if (!isImage(info.mimeType)) {
       return res.status(403).json(Errors.INVALID_IMAGE);
     }
     const size = 200;
 
-    await fs.promises.rm(path.join(avatarDirPath, data.id), {recursive: true, force: true})
-    await fs.promises.mkdir(path.join(avatarDirPath, data.id))
+    await fs.promises.rm(path.join(avatarsDirPath, data.id), {recursive: true, force: true})
+    await fs.promises.mkdir(path.join(avatarsDirPath, data.id))
 
     
 
@@ -168,7 +170,7 @@ app.post("/avatar", connectBusboy({immediate: true, limits: {files: 1, fileSize:
   });
 })
 
-app.post("/banner", connectBusboy({immediate: true, limits: {files: 1, fileSize: 7840000}}), (req, res) => {
+app.post("/banners", connectBusboy({immediate: true, limits: {files: 1, fileSize: 7840000}}), (req, res) => {
   const data = {
     id: null,
     secret: null,
@@ -192,14 +194,14 @@ app.post("/banner", connectBusboy({immediate: true, limits: {files: 1, fileSize:
     }
 
     const fileId = flake.gen();
-    fileDir = path.join(bannerDirPath,  data.id, fileId + extName);
+    fileDir = path.join(bannersDirPath,  data.id, fileId + extName);
 
     if (!isImage(info.mimeType)) {
       return res.status(403).json(Errors.INVALID_IMAGE);
     }
 
-    await fs.promises.rm(path.join(bannerDirPath, data.id), {recursive: true, force: true})
-    await fs.promises.mkdir(path.join(bannerDirPath, data.id))
+    await fs.promises.rm(path.join(bannersDirPath, data.id), {recursive: true, force: true})
+    await fs.promises.mkdir(path.join(bannersDirPath, data.id))
 
     
 
@@ -213,6 +215,77 @@ app.post("/banner", connectBusboy({immediate: true, limits: {files: 1, fileSize:
           return res.status(403).json(Errors.COMPRESS_ERROR);
         }
         res.status(200).json({path: path.join(DirNames.ProfileBanner, data.id, fileId + extName)});
+      })
+  });
+
+  req.busboy.on('field', (name, value, info) => {
+    data[name] = value;
+  });
+
+  req.busboy.on('close', () => {
+    if (data.file?.truncated) {
+      res.status(403).json(Errors.MAX_SIZE_LIMIT);
+      fs.unlink(fileDir, () => {});
+      return;
+    }
+  })
+
+  req.busboy.on('finish', () => {
+    if (!data.file) {
+      res.status(403).json(Errors.NO_FILE);
+    }
+  });
+})
+
+app.post("/attachments", connectBusboy({immediate: true, limits: {files: 1, fileSize: 7840000}}), (req, res) => {
+  const data = {
+    id: null,
+    secret: null,
+    file: null,
+  }
+
+  let fileDir;
+
+  req.busboy.on('file', async (name, file, info) => {
+    if (data.secret !== config.SECRET) {
+      return res.status(403).json(Errors.INVALID_SECRET);
+    }
+    
+    if (data.file) return res.status(403).end();
+    if (!data.id) return res.status(403).json(Errors.MISSING_ID);
+    data.file = file;
+
+    let extName = path.extname(info.filename);
+    const baseName = path.basename(info.filename, extName)
+    if (extName !== ".gif") {
+      extName = ".webp"
+    }
+
+    const fileId = flake.gen();
+    fileDir = path.join(attachmentsDirPath, data.id, fileId,  baseName + extName);
+
+    if (!isImage(info.mimeType)) {
+      return res.status(403).json(Errors.INVALID_IMAGE);
+    }
+
+    await fs.promises.mkdir(path.join(attachmentsDirPath, data.id, fileId));
+
+    gmInstance(file)
+      .resize(1920, 1080, ">")
+      .quality(90)
+      .autoOrient()
+      .write(fileDir, async (err) => {
+        if (err) {
+          console.log(err, fileDir);
+          return res.status(403).json(Errors.COMPRESS_ERROR);
+        }
+
+        const metadata = await sharp(fileDir).metadata();
+
+        res.status(200).json({
+          path: path.join(DirNames.Attachments, data.id, fileId,  baseName + extName),
+          dimensions: {width: metadata.width, height: metadata.height}
+        });
       })
   });
 
