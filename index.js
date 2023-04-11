@@ -287,7 +287,7 @@ app.post("/attachments", connectBusboy({immediate: true, limits: {files: 1, file
         const metadata = await sharp(fileDir).metadata();
 
         res.status(200).json({
-          path: path.join(DirNames.Attachments, data.id, fileId,  baseName + extName),
+          path: path.join(DirNames.Attachments, data.id, fileId,  encodeURI(baseName) + extName),
           dimensions: {width: metadata.width, height: metadata.height}
         });
       })
