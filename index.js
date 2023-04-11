@@ -261,7 +261,7 @@ app.post("/attachments", connectBusboy({immediate: true, limits: {files: 1, file
       extName = ".webp"
     }
 
-    const fileId = flake.gen();
+    const fileId = flake.gen().toString();
     fileDir = path.join(attachmentsDirPath, data.id, fileId,  baseName + extName);
 
     if (!isImage(info.mimeType)) {
