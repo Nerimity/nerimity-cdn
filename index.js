@@ -41,6 +41,10 @@ if (!fs.existsSync(bannersDirPath)) {
   fs.mkdirSync(bannersDirPath, {recursive: true});
 }
 
+if (!fs.existsSync(attachmentsDirPath)) {
+  fs.mkdirSync(attachmentsDirPath, {recursive: true});
+}
+
 const app = express();
 
 const Errors = {
@@ -268,7 +272,7 @@ app.post("/attachments", connectBusboy({immediate: true, limits: {files: 1, file
       return res.status(403).json(Errors.INVALID_IMAGE);
     }
 
-    await fs.promises.mkdir(path.join(attachmentsDirPath, data.id, fileId));
+    await fs.promises.mkdir(path.join(attachmentsDirPath, data.id, fileId), {recursive: true});
 
     gmInstance(file)
       .resize(1920, 1080, ">")
