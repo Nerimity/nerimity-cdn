@@ -54,6 +54,7 @@ const Errors = {
   "MAX_SIZE_LIMIT": {type: "MAX_SIZE_LIMIT", code: 4, limit: "7MB"},
   "INVALID_IMAGE": {type: "INVALID_IMAGE", code: 5, supported: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']},
   "COMPRESS_ERROR": {type: "COMPRESS_ERROR", code: 6},
+  "INVALID_PATH": {type: "INVALID_PATH", code: 6},
 }
 
 
@@ -83,8 +84,6 @@ app.get("/*", async (req, res, next) => {
     stdout.pipe(res)
   })
 
-
-  
 })
 
 
@@ -311,6 +310,36 @@ app.post("/attachments", connectBusboy({immediate: true, limits: {files: 1, file
     }
   });
 })
+
+
+app.delete("/", express.json(), (req, res) => {
+  const {secret, path: pathToDelete} = req.body;
+  if (secret !== config.SECRET) {
+    return res.status(403).json(Errors.INVALID_SECRET);
+  }
+  if (pathToDelete.includes("../")) return res.status(404).json(Errors.INVALID_PATH);
+  const fullPath = path.join(publicDirPath, decodeURI(pathToDelete));
+
+  // delete the file at the specified path.
+  fs.unlink(fullPath, (err) => {
+    if (err) {
+      return res.status(404).json(Errors.FILE_NOT_FOUND);
+    }
+    // go back one directory and delete the folder if it's empty
+    const parentDir = path.dirname(fullPath);
+    fs.readdir(parentDir, (err, files) => {
+      if (err) return res.status(500).json(Errors.INTERNAL_ERROR);
+      if (files.length !== 0) return res.status(404).json({status: "deleted"});
+      fs.rmdir(parentDir, (err) => {
+        if (err) return res.status(500).json(Errors.INTERNAL_ERROR);
+        return res.status(404).json({status: "deleted"});
+      })
+    });    
+  });
+
+})
+
+
 
 app.listen(config.PORT, ()=> {
   console.log(`Nerimity CDN started at port ${config.PORT}`);
