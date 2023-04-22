@@ -62,11 +62,17 @@ const Errors = {
 app.get("/*", async (req, res, next) => {
   const type = req.query.type;
   if (!type) return next();
-  if (req.path.includes("../")) return next();
-  const fullPath = path.join(publicDirPath, req.path);
+
+  const decodedPath = path.join(path.dirname(req.path), decodeURI(path.basename(req.path)))
+
+
+  if (decodedPath.includes("..")) return next();
+  const fullPath = path.join(publicDirPath, decodedPath);
+
+  if (await checkIfDirectory(fullPath)) return res.status(404).json(Errors.INVALID_PATH);
 
   
-  const stream =  fs.createReadStream(fullPath);
+  const stream = fs.createReadStream(fullPath);
   
   stream.on('error', (err) => {
     console.log(err)
@@ -312,13 +318,15 @@ app.post("/attachments", connectBusboy({immediate: true, limits: {files: 1, file
 })
 
 
-app.delete("/", express.json(), (req, res) => {
+app.delete("/", express.json(), async (req, res) => {
   const {secret, path: pathToDelete} = req.body;
   if (secret !== config.SECRET) {
     return res.status(403).json(Errors.INVALID_SECRET);
   }
-  if (pathToDelete.includes("../")) return res.status(404).json(Errors.INVALID_PATH);
+  if (pathToDelete.includes("..")) return res.status(404).json(Errors.INVALID_PATH);
   const fullPath = path.join(publicDirPath, decodeURI(pathToDelete));
+
+  if (await checkIfDirectory(fullPath)) return res.status(404).json(Errors.INVALID_PATH);
 
   // delete the file at the specified path.
   fs.unlink(fullPath, (err) => {
@@ -358,4 +366,15 @@ function headerControl (res, path) {
     return;
   }
   res.set('Cache-Control', 'public, max-age=31536000');
+}
+
+
+async function checkIfDirectory(path) {
+  if (!path) return false;
+  try {
+    const stat = await fs.promises.stat(path);
+    return stat.isDirectory();
+  } catch (err) {
+    return false;
+  }
 }
