@@ -386,5 +386,6 @@ function safeFilename(filename) {
   while (str.trim().startsWith('.')) {
     str = str.trim().slice(1);
   }
+  if (!str) return "unnamed";
   return str;
 }
