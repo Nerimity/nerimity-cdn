@@ -384,7 +384,7 @@ function safeFilename(filename) {
   // remove dots from the start of the filename
   let str = filename;
   while (str.trim().startsWith('.')) {
-    str = str.slice(1);
+    str = str.trim().slice(1);
   }
   return str;
 }
