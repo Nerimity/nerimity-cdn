@@ -323,8 +323,8 @@ app.delete("/", express.json(), async (req, res) => {
   if (secret !== config.SECRET) {
     return res.status(403).json(Errors.INVALID_SECRET);
   }
-  if (pathToDelete.includes("../")) return res.status(404).json(Errors.INVALID_PATH);
   const fullPath = path.join(publicDirPath, decodeURI(pathToDelete));
+  if (fullPath.includes("../")) return res.status(404).json(Errors.INVALID_PATH);
 
   if (await checkIfDirectory(fullPath)) return res.status(404).json(Errors.INVALID_PATH);
 
