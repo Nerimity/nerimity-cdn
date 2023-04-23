@@ -265,6 +265,7 @@ app.post("/attachments", connectBusboy({immediate: true, limits: {files: 1, file
     data.file = file;
 
     let extName = path.extname(info.filename);
+
     const baseName = safeFilename(path.basename(info.filename, extName))
     if (extName !== ".gif") {
       extName = ".webp"
@@ -382,7 +383,7 @@ async function checkIfDirectory(path) {
 function safeFilename(filename) {
   // remove dots from the start of the filename
   let str = filename;
-  while (str.startsWith('.')) {
+  while (str.trim().startsWith('.')) {
     str = str.slice(1);
   }
   return str;
