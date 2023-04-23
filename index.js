@@ -66,7 +66,7 @@ app.get("/*", async (req, res, next) => {
   const decodedPath = path.join(path.dirname(req.path), decodeURI(path.basename(req.path)))
 
 
-  if (decodedPath.includes("..")) return next();
+  if (decodedPath.includes("../")) return res.status(404).json(Errors.INVALID_PATH);
   const fullPath = path.join(publicDirPath, decodedPath);
 
   if (await checkIfDirectory(fullPath)) return res.status(404).json(Errors.INVALID_PATH);
@@ -323,7 +323,7 @@ app.delete("/", express.json(), async (req, res) => {
   if (secret !== config.SECRET) {
     return res.status(403).json(Errors.INVALID_SECRET);
   }
-  if (pathToDelete.includes("..")) return res.status(404).json(Errors.INVALID_PATH);
+  if (pathToDelete.includes("../")) return res.status(404).json(Errors.INVALID_PATH);
   const fullPath = path.join(publicDirPath, decodeURI(pathToDelete));
 
   if (await checkIfDirectory(fullPath)) return res.status(404).json(Errors.INVALID_PATH);
