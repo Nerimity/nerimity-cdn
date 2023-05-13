@@ -1,4 +1,4 @@
-import path from 'path';
+import path, { extname } from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import express from 'express';
@@ -12,6 +12,7 @@ const DirNames = {
   ProfileAvatar: 'avatars',
   ProfileBanner: 'profile_banners',
   Attachments: 'attachments',
+  Emojis: 'emojis',
 }
 
 
@@ -32,6 +33,7 @@ const publicDirPath = path.join(__dirname, 'public');
 const avatarsDirPath = path.join(publicDirPath, DirNames.ProfileAvatar);
 const bannersDirPath = path.join(publicDirPath, DirNames.ProfileBanner);
 const attachmentsDirPath = path.join(publicDirPath, DirNames.Attachments);
+const emojisDirPath = path.join(publicDirPath, DirNames.Emojis);
 
 
 if (!fs.existsSync(avatarsDirPath)) {
@@ -43,6 +45,9 @@ if (!fs.existsSync(bannersDirPath)) {
 
 if (!fs.existsSync(attachmentsDirPath)) {
   fs.mkdirSync(attachmentsDirPath, {recursive: true});
+}
+if (!fs.existsSync(emojisDirPath)) {
+  fs.mkdirSync(emojisDirPath, {recursive: true});
 }
 
 const app = express();
@@ -178,6 +183,95 @@ app.post("/avatars", connectBusboy({immediate: true, limits: {files: 1, fileSize
     }
   });
 })
+
+
+
+
+
+app.post("/emojis", connectBusboy({immediate: true, limits: {files: 1, fileSize: 7840000}}), (req, res) => {
+  const data = {
+    id: null,
+    secret: null,
+    file: null,
+  }
+
+  let fileDir;
+
+  req.busboy.on('file', async (name, file, info) => {
+    if (data.secret !== config.SECRET) {
+      return res.status(403).json(Errors.INVALID_SECRET);
+    }
+    
+    if (data.file) return res.status(403).end();
+    if (!data.id) return res.status(403).json(Errors.MISSING_ID);
+    data.file = file;
+
+    let extName = path.extname(info.filename);
+    if (extName !== ".gif") {
+      extName = ".webp"
+    }
+
+    const fileId = flake.gen();
+    fileDir = path.join(emojisDirPath,  data.id, fileId + extName);
+
+    if (!isImage(info.mimeType)) {
+      return res.status(403).json(Errors.INVALID_IMAGE);
+    }
+    const size = 100;
+
+    await fs.promises.rm(path.join(emojisDirPath, data.id), {recursive: true, force: true})
+    await fs.promises.mkdir(path.join(emojisDirPath, data.id))
+
+    
+
+    gmInstance(file)
+      // .resize(1920, 1080, ">")
+      .quality(90)
+      .autoOrient()
+      //crop
+      .coalesce()
+      .resize(size, size, "^")
+      .gravity("Center")
+      .crop(size, size)
+      .repage("+")
+      .dither(false)
+      .matte()
+      .fuzz(10)
+      .colors(128)
+      //
+      .write(fileDir, (err) => {
+        if (err) {
+          console.log(err, fileDir);
+          return res.status(403).json(Errors.COMPRESS_ERROR);
+        }
+        res.status(200).json({path: path.join(DirNames.Emojis, data.id, fileId + extName), gif: extname === ".gif", id: fileId});
+      })
+  });
+
+  req.busboy.on('field', (name, value, info) => {
+    data[name] = value;
+  });
+
+  req.busboy.on('close', () => {
+    if (data.file?.truncated) {
+      res.status(403).json(Errors.MAX_SIZE_LIMIT);
+      fs.unlink(fileDir, () => {});
+      return;
+    }
+  })
+
+  req.busboy.on('finish', () => {
+    if (!data.file) {
+      res.status(403).json(Errors.NO_FILE);
+    }
+  });
+})
+
+
+
+
+
+
 
 app.post("/banners", connectBusboy({immediate: true, limits: {files: 1, fileSize: 7840000}}), (req, res) => {
   const data = {
