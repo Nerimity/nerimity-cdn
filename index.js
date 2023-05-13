@@ -244,7 +244,7 @@ app.post("/emojis", connectBusboy({immediate: true, limits: {files: 1, fileSize:
           console.log(err, fileDir);
           return res.status(403).json(Errors.COMPRESS_ERROR);
         }
-        res.status(200).json({path: path.join(DirNames.Emojis, data.id, fileId + extName), gif: extname === ".gif", id: fileId.toString()});
+        res.status(200).json({path: path.join(DirNames.Emojis, data.id, fileId + extName), gif: extName === ".gif", id: fileId.toString()});
       })
   });
 
