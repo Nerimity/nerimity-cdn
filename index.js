@@ -190,7 +190,6 @@ app.post("/avatars", connectBusboy({immediate: true, limits: {files: 1, fileSize
 
 app.post("/emojis", connectBusboy({immediate: true, limits: {files: 1, fileSize: 7840000}}), (req, res) => {
   const data = {
-    id: null,
     secret: null,
     file: null,
   }
@@ -203,7 +202,6 @@ app.post("/emojis", connectBusboy({immediate: true, limits: {files: 1, fileSize:
     }
     
     if (data.file) return res.status(403).end();
-    if (!data.id) return res.status(403).json(Errors.MISSING_ID);
     data.file = file;
 
     let extName = path.extname(info.filename);
@@ -212,17 +210,13 @@ app.post("/emojis", connectBusboy({immediate: true, limits: {files: 1, fileSize:
     }
 
     const fileId = flake.gen();
-    fileDir = path.join(emojisDirPath,  data.id, fileId + extName);
+    fileDir = path.join(emojisDirPath, fileId + extName);
 
     if (!isImage(info.mimeType)) {
       return res.status(403).json(Errors.INVALID_IMAGE);
     }
     const size = 100;
 
-    await fs.promises.rm(path.join(emojisDirPath, data.id), {recursive: true, force: true})
-    await fs.promises.mkdir(path.join(emojisDirPath, data.id))
-
-    
 
     gmInstance(file)
       // .resize(1920, 1080, ">")
@@ -244,7 +238,7 @@ app.post("/emojis", connectBusboy({immediate: true, limits: {files: 1, fileSize:
           console.log(err, fileDir);
           return res.status(403).json(Errors.COMPRESS_ERROR);
         }
-        res.status(200).json({path: path.join(DirNames.Emojis, data.id, fileId + extName), gif: extName === ".gif", id: fileId.toString()});
+        res.status(200).json({path: path.join(DirNames.Emojis, fileId + extName), gif: extName === ".gif", id: fileId.toString()});
       })
   });
 
