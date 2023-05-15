@@ -429,7 +429,7 @@ app.delete("/", express.json(), async (req, res) => {
       if (files.length !== 0) return res.status(404).json({status: "deleted"});
       fs.rmdir(parentDir, (err) => {
         if (err) return res.status(500).json(Errors.INTERNAL_ERROR);
-        return res.status(404).json({status: "deleted"});
+        return res.status(200).json({status: "deleted"});
       })
     });    
   });
