@@ -1,4 +1,4 @@
-import path, { extname } from 'path';
+import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import express from 'express';
@@ -24,6 +24,8 @@ const flake = new FlakeId({
 });
 
 import gm from 'gm';
+import { Readable } from 'stream';
+import { pipeline } from 'stream/promises';
 const gmInstance = gm.subClass({ imageMagick: true });
 
 const __filename = fileURLToPath(import.meta.url);
@@ -436,6 +438,48 @@ app.delete("/", express.json(), async (req, res) => {
 
 })
 
+
+app.get("/proxy", async (req, res) => {
+  res.header('Cache-Control', 'public, max-age=31536000');
+  res.header('Access-Control-Allow-Origin', 'https://nerimity.com');
+
+  const unsafeImageUrl = req.query.url;
+
+  if (!unsafeImageUrl || !isUrl(unsafeImageUrl)) {
+    res.status(403).end();
+    return;
+  }
+
+  if (unsafeImageUrl.startsWith("https://cdn.nerimity.com")) {
+    res.redirect(unsafeImageUrl);
+    return;
+  }
+
+  const mime = await getMime(unsafeImageUrl);
+
+  if (!isImage(mime)) {
+    res.status(403).end();
+    return;
+  }
+  res.header('Content-Type', mime);
+
+
+  const imageRes = await fetch(unsafeImageUrl).catch(err => console.log(err));
+  pipeline(imageRes.body, res);
+})
+
+function isUrl (url) {
+  if (url.startsWith("https://") || url.startsWith("http://")) {
+    return true;
+  }
+}
+
+// get image mime type by url
+async function getMime (url) {
+  const res = await fetch(url).catch(err => console.log(err));
+  const type = res.headers.get('content-type');
+  return type;
+}
 
 
 app.listen(config.PORT, ()=> {
