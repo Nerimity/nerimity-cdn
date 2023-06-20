@@ -65,11 +65,11 @@ const Errors = {
 }
 
 
-app.get("/proxy", async (req, res) => {
+app.get("/proxy/:imageUrl/*", async (req, res) => {
   res.header('Cache-Control', 'public, max-age=31536000');
   res.header('Access-Control-Allow-Origin', 'https://nerimity.com');
 
-  const unsafeImageUrl = req.query.url;
+  const unsafeImageUrl = req.params.imageUrl;
   const type = req.query.type;
 
   if (!unsafeImageUrl || !isUrl(unsafeImageUrl)) {
