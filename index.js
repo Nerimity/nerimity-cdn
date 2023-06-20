@@ -77,11 +77,6 @@ app.get("/proxy", async (req, res) => {
     return;
   }
 
-  if (unsafeImageUrl.startsWith("https://cdn.nerimity.com")) {
-    res.redirect(unsafeImageUrl);
-    return;
-  }
-
   const mime = await getMime(unsafeImageUrl);
 
   if (!isImage(mime)) {
