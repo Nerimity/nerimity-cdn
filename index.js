@@ -65,6 +65,79 @@ const Errors = {
 }
 
 
+app.get("/proxy", async (req, res) => {
+  res.header('Cache-Control', 'public, max-age=31536000');
+  res.header('Access-Control-Allow-Origin', 'https://nerimity.com');
+
+  const unsafeImageUrl = req.query.url;
+  const type = req.query.type;
+
+  if (!unsafeImageUrl || !isUrl(unsafeImageUrl)) {
+    res.status(403).end();
+    return;
+  }
+
+  if (unsafeImageUrl.startsWith("https://cdn.nerimity.com")) {
+    res.redirect(unsafeImageUrl);
+    return;
+  }
+
+  const mime = await getMime(unsafeImageUrl);
+
+  if (!isImage(mime)) {
+    res.status(403).end();
+    return;
+  }
+  res.header('Content-Type', mime);
+
+
+  const imageRes = await fetch(unsafeImageUrl).catch(err => console.log(err));
+
+  if (type === "webp") {
+    gmInstance(Buffer.from(await imageRes.arrayBuffer())).selectFrame(0).stream("png", (err, stdout) => {
+      if (err) {
+        return res.status(403).end();
+      }
+      res.set('Cache-Control', 'public, max-age=31536000');
+      res.set('Accept-Ranges', 'bytes');
+      res.header("Content-Type", "image/webp");
+      stdout.pipe(res)
+    })
+    return;
+  }
+
+  pipeline(imageRes.body, res);
+})
+
+app.get("/proxy-dimensions", async (req, res) => {
+  res.header('Cache-Control', 'public, max-age=31536000');
+
+  const unsafeImageUrl = req.query.url;
+  const secret = req.query.secret;
+  if (secret !== config.SECRET) return res.status(403).end()
+
+  if (!unsafeImageUrl || !isUrl(unsafeImageUrl)) {
+    res.status(403).end();
+    return;
+  }
+
+  const mime = await getMime(unsafeImageUrl);
+
+  if (!isImage(mime)) {
+    res.status(403).end();
+    return;
+  }
+
+  try {
+    const imageRes = await fetch(unsafeImageUrl)
+    const metadata = await sharp(await imageRes.arrayBuffer()).metadata()
+    res.json({height: metadata.height, width: metadata.width})
+  } catch {
+    res.status(403).end();
+  }
+})
+
+
 
 app.get("/*", async (req, res, next) => {
   const type = req.query.type;
@@ -439,62 +512,7 @@ app.delete("/", express.json(), async (req, res) => {
 })
 
 
-app.get("/proxy", async (req, res) => {
-  res.header('Cache-Control', 'public, max-age=31536000');
-  res.header('Access-Control-Allow-Origin', 'https://nerimity.com');
 
-  const unsafeImageUrl = req.query.url;
-
-  if (!unsafeImageUrl || !isUrl(unsafeImageUrl)) {
-    res.status(403).end();
-    return;
-  }
-
-  if (unsafeImageUrl.startsWith("https://cdn.nerimity.com")) {
-    res.redirect(unsafeImageUrl);
-    return;
-  }
-
-  const mime = await getMime(unsafeImageUrl);
-
-  if (!isImage(mime)) {
-    res.status(403).end();
-    return;
-  }
-  res.header('Content-Type', mime);
-
-
-  const imageRes = await fetch(unsafeImageUrl).catch(err => console.log(err));
-  pipeline(imageRes.body, res);
-})
-
-app.get("/proxy-dimensions", async (req, res) => {
-  res.header('Cache-Control', 'public, max-age=31536000');
-
-  const unsafeImageUrl = req.query.url;
-  const secret = req.query.secret;
-  if (secret !== config.SECRET) return res.status(403).end()
-
-  if (!unsafeImageUrl || !isUrl(unsafeImageUrl)) {
-    res.status(403).end();
-    return;
-  }
-
-  const mime = await getMime(unsafeImageUrl);
-
-  if (!isImage(mime)) {
-    res.status(403).end();
-    return;
-  }
-
-  try {
-    const imageRes = await fetch(unsafeImageUrl)
-    const metadata = await sharp(await imageRes.arrayBuffer()).metadata()
-    res.json({height: metadata.height, width: metadata.width})
-  } catch {
-    res.status(403).end();
-  }
-})
 
 function isUrl (url) {
   if (url.startsWith("https://") || url.startsWith("http://")) {
