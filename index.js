@@ -468,6 +468,34 @@ app.get("/proxy", async (req, res) => {
   pipeline(imageRes.body, res);
 })
 
+app.get("/proxy-dimensions", async (req, res) => {
+  res.header('Cache-Control', 'public, max-age=31536000');
+
+  const unsafeImageUrl = req.query.url;
+  const secret = req.query.secret;
+  if (secret !== config.SECRET) return res.status(403).end()
+
+  if (!unsafeImageUrl || !isUrl(unsafeImageUrl)) {
+    res.status(403).end();
+    return;
+  }
+
+  const mime = await getMime(unsafeImageUrl);
+
+  if (!isImage(mime)) {
+    res.status(403).end();
+    return;
+  }
+
+  try {
+    const imageRes = await fetch(unsafeImageUrl)
+    const metadata = await sharp(await imageRes.arrayBuffer()).metadata()
+    res.json({height: metadata.height, width: metadata.width})
+  } catch {
+    res.status(403).end();
+  }
+})
+
 function isUrl (url) {
   if (url.startsWith("https://") || url.startsWith("http://")) {
     return true;
