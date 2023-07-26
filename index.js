@@ -62,6 +62,7 @@ const Errors = {
   "INVALID_IMAGE": {type: "INVALID_IMAGE", code: 5, supported: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']},
   "COMPRESS_ERROR": {type: "COMPRESS_ERROR", code: 6},
   "INVALID_PATH": {type: "INVALID_PATH", code: 6},
+  "INVALID_POINTS": {type: "INVALID_POINTS", code: 7},
 }
 
 
@@ -180,6 +181,7 @@ app.post("/avatars", connectBusboy({immediate: true, limits: {files: 1, fileSize
     id: null,
     secret: null,
     file: null,
+    points: null,
   }
 
   let fileDir;
@@ -206,22 +208,48 @@ app.post("/avatars", connectBusboy({immediate: true, limits: {files: 1, fileSize
     }
     const size = 200;
 
+    let points;
+    let dimensions;
+
+    try {
+      points = JSON.parse(data.points || null);
+      if (points !== null) {
+        if (!Array.isArray(points)) return res.status(403).json(Errors.INVALID_POINTS);
+        if (points.length !== 4) return res.status(403).json(Errors.INVALID_POINTS);
+        const invalidPoint = points.find(point => typeof point !== "number" || isNaN(point) || point < 0 || point > 9999);
+        if (invalidPoint) return res.status(403).json(Errors.INVALID_POINTS);
+        dimensions = points && getDimensions(points);
+      }
+    } catch(err) {
+      return res.status(403).json(Errors.INVALID_POINTS);
+    }
+
+
+
     await fs.promises.rm(path.join(avatarsDirPath, data.id), {recursive: true, force: true})
     await fs.promises.mkdir(path.join(avatarsDirPath, data.id))
 
-    
+  
 
-    gmInstance(file)
-      // .resize(1920, 1080, ">")
+    let makeGM = gmInstance(file)
       .quality(90)
       .autoOrient()
       //crop
       .coalesce()
-      .resize(size, size, "^")
-      .gravity("Center")
-      .crop(size, size)
-      .repage("+")
-      .dither(false)
+
+      if (points) {
+        makeGM = makeGM
+          .crop(dimensions.width, dimensions.height, points[0], points[1])
+          .resize(size, size, "^")
+      } else {
+        makeGM = makeGM.resize(size, size, "^")
+        .gravity("Center")
+        .crop(size, size)
+        .repage("+")
+      }
+
+
+      makeGM.dither(false)
       .matte()
       .fuzz(10)
       .colors(128)
@@ -255,7 +283,12 @@ app.post("/avatars", connectBusboy({immediate: true, limits: {files: 1, fileSize
 })
 
 
-
+function getDimensions(points) {
+  const [startX, startY, endX, endY ] = points;
+  const width = Math.abs(endX - startX);
+  const height = Math.abs(endY - startY);
+  return { width, height };
+}
 
 
 app.post("/emojis", connectBusboy({immediate: true, limits: {files: 1, fileSize: 7840000}}), (req, res) => {
