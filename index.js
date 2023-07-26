@@ -241,6 +241,7 @@ app.post("/avatars", connectBusboy({immediate: true, limits: {files: 1, fileSize
         makeGM = makeGM
           .crop(dimensions.width, dimensions.height, points[0], points[1])
           .resize(size, size, "^")
+          .repage("+")
       } else {
         makeGM = makeGM.resize(size, size, "^")
         .gravity("Center")
