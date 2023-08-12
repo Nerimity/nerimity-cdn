@@ -62,8 +62,8 @@ const Errors = {
   "MAX_SIZE_LIMIT": {type: "MAX_SIZE_LIMIT", code: 4, limit: "7MB"},
   "INVALID_IMAGE": {type: "INVALID_IMAGE", code: 5, supported: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']},
   "COMPRESS_ERROR": {type: "COMPRESS_ERROR", code: 6},
-  "INVALID_PATH": {type: "INVALID_PATH", code: 6},
-  "INVALID_POINTS": {type: "INVALID_POINTS", code: 7},
+  "INVALID_PATH": {type: "INVALID_PATH", code: 7},
+  "INVALID_POINTS": {type: "INVALID_POINTS", code: 8},
 }
 
 
