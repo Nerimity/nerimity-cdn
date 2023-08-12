@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs';
+import promiseFS from 'fs/promises'
 import { fileURLToPath } from 'url';
 import express from 'express';
 import connectBusboy from 'connect-busboy';
@@ -508,6 +509,47 @@ app.post("/attachments", connectBusboy({immediate: true, limits: {files: 1, file
       res.status(403).json(Errors.NO_FILE);
     }
   });
+})
+
+
+// This runs in a interval in nerimity-server when a server channel is deleted.
+app.delete("/channels/:channelId/attachments/batch", express.json(), async (req, res) => {
+  const {secret} = req.body;
+  if (secret !== config.SECRET) {
+    return res.status(403).json(Errors.INVALID_SECRET);
+  }
+
+  const DELETE_BATCH = 1000;
+  const channelPath = path.join(attachmentsDirPath, req.params.channelId);
+
+  if (!fs.existsSync(channelPath)) {
+    return res.status(404).json(Errors.INVALID_PATH)
+  }
+
+  const dir = await promiseFS.opendir(channelPath);
+
+  const filesToDelete = [];
+
+  let i = 0;
+  for await (const dirent of dir) {
+    if (i === DELETE_BATCH) break;
+    const filePath = path.join(channelPath, dirent.name)
+    filesToDelete.push(filePath);
+    i++;
+  }
+  
+  const promises = filesToDelete.map(filePath => 
+    promiseFS.rm(filePath, {recursive: true, force: true}).catch(() => {})
+  );
+
+  await Promise.all(promises);
+  
+  if (filesToDelete.length < DELETE_BATCH) {
+    await promiseFS.rm(channelPath, {recursive: true, force: true});
+  }
+  
+  console.log("Deleted ", filesToDelete.length, "images.")
+  return res.status(200).json({status: "deleted", count: filesToDelete.length});
 })
 
 
