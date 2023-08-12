@@ -548,7 +548,7 @@ app.delete("/channels/:channelId/attachments/batch", express.json(), async (req,
     await promiseFS.rm(channelPath, {recursive: true, force: true});
   }
   
-  console.log("Deleted ", filesToDelete.length, "image(s).")
+  console.log("Deleted", filesToDelete.length, "image(s).")
   return res.status(200).json({status: "deleted", count: filesToDelete.length});
 })
 
