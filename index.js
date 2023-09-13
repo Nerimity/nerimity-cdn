@@ -59,7 +59,7 @@ const Errors = {
   "INVALID_SECRET": {type: "INVALID_SECRET", code: 1},
   "NO_FILE": {type: "NO_FILE", code: 2},
   "MISSING_ID": {type: "MISSING_ID", code: 3},
-  "MAX_SIZE_LIMIT": {type: "MAX_SIZE_LIMIT", code: 4, limit: "7MB"},
+  "MAX_SIZE_LIMIT": {type: "MAX_SIZE_LIMIT", code: 4, limit: "12MB"},
   "INVALID_IMAGE": {type: "INVALID_IMAGE", code: 5, supported: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']},
   "COMPRESS_ERROR": {type: "COMPRESS_ERROR", code: 6},
   "INVALID_PATH": {type: "INVALID_PATH", code: 7},
@@ -177,7 +177,7 @@ app.use(serveStatic(publicDirPath, {
 
 
 
-app.post("/avatars", connectBusboy({immediate: true, limits: {files: 1, fileSize: 7840000}}), (req, res) => {
+app.post("/avatars", connectBusboy({immediate: true, limits: {files: 1, fileSize: 12 * 1024 * 1024}}), (req, res) => {
   const data = {
     id: null,
     secret: null,
@@ -293,7 +293,7 @@ function getDimensions(points) {
 }
 
 
-app.post("/emojis", connectBusboy({immediate: true, limits: {files: 1, fileSize: 7840000}}), (req, res) => {
+app.post("/emojis", connectBusboy({immediate: true, limits: {files: 1, fileSize: 12 * 1024 * 1024}}), (req, res) => {
   const data = {
     secret: null,
     file: null,
@@ -372,7 +372,7 @@ app.post("/emojis", connectBusboy({immediate: true, limits: {files: 1, fileSize:
 
 
 
-app.post("/banners", connectBusboy({immediate: true, limits: {files: 1, fileSize: 7840000}}), (req, res) => {
+app.post("/banners", connectBusboy({immediate: true, limits: {files: 1, fileSize: 12 * 1024 * 1024}}), (req, res) => {
   const data = {
     id: null,
     secret: null,
@@ -439,7 +439,7 @@ app.post("/banners", connectBusboy({immediate: true, limits: {files: 1, fileSize
   });
 })
 
-app.post("/attachments", connectBusboy({immediate: true, limits: {files: 1, fileSize: 7840000}}), (req, res) => {
+app.post("/attachments", connectBusboy({immediate: true, limits: {files: 1, fileSize: 12 * 1024 * 1024}}), (req, res) => {
   const data = {
     id: null,
     secret: null,
