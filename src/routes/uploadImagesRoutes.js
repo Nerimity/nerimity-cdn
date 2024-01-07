@@ -194,7 +194,8 @@ uploadRouter.post("/emojis", async (req, res) => {
 
   res.status(200).json({
     path: path.join(DirNames.Emojis, encodeURI(newParsedFile.name) + newParsedFile.ext),
-    dimensions: result.dimensions
+    gif: result.gif,
+    id: fileId
   });
 
 })

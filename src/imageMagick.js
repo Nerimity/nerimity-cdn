@@ -19,13 +19,13 @@ export const imageMagick = gm.subClass({ imageMagick: "7+" });
  *  size: [number, number, "fit" | "fill"]
  *  crop?: [number, number, number, number] | [number, number]
  * }} opts - The options for compressing the image.
- * @return {Promise<[{path: string; newFilename: string; dimensions: {width: number, height: number;}}, null] | [null, any]>} A promise that resolves to the metadata of the compressed image.
+ * @return {Promise<[{gif: boolean; path: string; newFilename: string; dimensions: {width: number, height: number;}}, null] | [null, any]>} A promise that resolves to the metadata of the compressed image.
  */
 export const compressImage = async (opts) => {
   const oldMetadata = await getMetadata(opts.tempPath);
   if (!oldMetadata) return [null, Errors.COMPRESS_ERROR()]
 
-  const isAnimated = oldMetadata.pages;
+  const isAnimated = !!oldMetadata.pages;
 
   const parsedFilename = path.parse(opts.filename);
   const newFilename = parsedFilename.name + (isAnimated ? ".gif" : ".webp");
@@ -73,7 +73,8 @@ export const compressImage = async (opts) => {
       resolve([{
         path: path.join(newPath, newFilename),
         newFilename,
-        dimensions: {width: newMetadata.width, height: newMetadata.height}
+        dimensions: {width: newMetadata.width, height: newMetadata.height},
+        gif: isAnimated
       }, null])
     });
   })
