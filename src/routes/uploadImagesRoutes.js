@@ -15,6 +15,7 @@ const uploadRouter = Router();
 
 uploadRouter.post("/attachments", async (req, res) => {
   const busboy = useBusboy(req, res);
+  if (!busboy) return res.status(403).end()
 
   const [file, fields, error] = await busboy({
     limits: {
@@ -77,6 +78,7 @@ uploadRouter.post("/attachments", async (req, res) => {
 
 uploadRouter.post("/banners", async (req, res) => {
   const busboy = useBusboy(req, res);
+  if (!busboy) return res.status(403).end()
 
   const [file, fields, error] = await busboy({
     limits: {
@@ -139,6 +141,7 @@ uploadRouter.post("/banners", async (req, res) => {
 
 uploadRouter.post("/emojis", async (req, res) => {
   const busboy = useBusboy(req, res);
+  if (!busboy) return res.status(403).end()
 
   const [file, fields, error] = await busboy({
     limits: {
@@ -202,6 +205,7 @@ uploadRouter.post("/emojis", async (req, res) => {
 
 uploadRouter.post("/avatars", async (req, res) => {
   const busboy = useBusboy(req, res);
+  if (!busboy) return res.status(403).end()
 
   const [file, fields, error] = await busboy({
     limits: {

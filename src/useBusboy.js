@@ -15,6 +15,7 @@ import { Errors } from "./Errors.js";
  * @param {import("express").res} res - The response object.
  */
 export const useBusboy = (req, res) => {
+  if (!req.headers["content-type"]) return;
   let fields = {};
   let file;
   let savePath;
