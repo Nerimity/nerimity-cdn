@@ -87,6 +87,11 @@ export const useBusboy = (req, res) => {
         resolve([null, null, err]);
       })
 
+      busboy.on("finish", () => {
+        if (file) return;
+        err = Errors.INTERNAL_ERROR();
+        resolve([null, null, err]);
+      })
 
       req.pipe(busboy);
     });
