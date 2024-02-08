@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getMimeByUrl, isImageMime, isUrl } from '../utils.js';
 import config from '../config.js';
-import { gifToStaticWebp } from '../imageMagick.js';
+import { miniConvert } from '../imageMagick.js';
 import { pipeline } from 'stream/promises';
 import https from 'https';
 import { getMetadata } from '../sharp.js';
@@ -37,7 +37,7 @@ proxyRouter.get("/proxy/:imageUrl/:filename", async (req, res) => {
   
   https.get(unsafeImageUrl, async (imageRes) => {      
     if (type === "webp") {
-      const [stream, error] = await gifToStaticWebp(imageRes);
+      const [stream, error] = await miniConvert(imageRes, {static: true});
       
       if (error) {
         return res.status(403).end();
