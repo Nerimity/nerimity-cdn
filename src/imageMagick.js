@@ -84,14 +84,25 @@ export const compressImage = async (opts) => {
 
 
 /**
- * Converts a GIF image to a static WebP image.
  *
- * @param {string | import("stream").Readable} pathOrStream - The path to the GIF image.
+ * @param {string | import("stream").Readable} pathOrStream
+ * @param {{size?: number | [number, number], static: boolean} | undefined} opts 
  * @return {Promise<[import("stream").Readable, null] | [null, Error]>} - A promise that resolves to an array containing the WebP stream and any error that occurred.
  */
-export async function gifToStaticWebp(pathOrStream) {
+export async function miniConvert(pathOrStream, opts) {
   return new Promise(resolve => {
-    imageMagick(pathOrStream).selectFrame(0).stream("webp", (err, stream) => {
+    let instance = imageMagick(pathOrStream);
+    if (opts.static) instance = instance.selectFrame(0);
+    if (opts.size) {
+      if (typeof opts.size === "number") {
+        instance = instance.resize(opts.size, opts.size, ">")
+      }
+      else {
+        instance = instance.resize(opts.size[0], opts.size[1], ">")
+      }
+    }
+
+    instance.stream("webp", (err, stream) => {
       if (err) return resolve([null, err])
       resolve([stream, null])
     });
