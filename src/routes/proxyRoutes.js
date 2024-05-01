@@ -4,6 +4,7 @@ import config from '../config.js';
 import { miniConvert } from '../imageMagick.js';
 import { pipeline } from 'stream/promises';
 import https from 'https';
+import http from 'http';
 import { getMetadata } from '../sharp.js';
 
 
@@ -33,9 +34,10 @@ proxyRouter.get("/proxy/:imageUrl/:filename", async (req, res) => {
 
 
 
+  const protocol = unsafeImageUrl.startsWith('https') ? https : http
   
   
-  https.get(unsafeImageUrl, async (imageRes) => {      
+  protocol.get(unsafeImageUrl, async (imageRes) => {      
     if (type === "webp") {
       const [stream, error] = await miniConvert(imageRes, {static: true});
       
