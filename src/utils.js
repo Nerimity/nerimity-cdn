@@ -1,6 +1,6 @@
 import { Errors } from "./Errors.js";
 
-export function isImageMime(mime){
+export function isImageMime(mime) {
   if (Errors.INVALID_IMAGE().supported.includes(mime)) {
     return true;
   }
@@ -9,7 +9,7 @@ export function isImageMime(mime){
 export function safeFilename(filename) {
   // remove dots from the start of the filename
   let str = filename;
-  while (str.trim().startsWith('.')) {
+  while (str.trim().startsWith(".")) {
     str = str.trim().slice(1);
   }
   if (!str) return "unnamed";
@@ -26,16 +26,15 @@ export async function checkIfDirectory(path) {
   }
 }
 
-
-export function isUrl (url) {
+export function isUrl(url) {
   if (url.startsWith("https://") || url.startsWith("http://")) {
     return true;
   }
 }
 
-
-export async function getMimeByUrl (url) {
-  const res = await fetch(url).catch(err => console.log(err));
-  const type = res.headers.get('content-type');
+export async function getMimeByUrl(url) {
+  const res = await fetch(url).catch((err) => console.error(err));
+  if (!res) return null;
+  const type = res.headers.get("content-type");
   return type;
 }
