@@ -18,7 +18,7 @@ app.use(
 
 // Add headers before the routes are defined
 app.use(function (req, res, next) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Origin", "https://nerimity.com");
   next();
 });
 
