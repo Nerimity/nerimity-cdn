@@ -7,7 +7,7 @@ createFolders();
 const cpuCount = cpus().length;
 
 for (let i = 0; i < cpuCount; i++) {
-  const worker = new Worker(import.meta.dirname + "/worker.js", {
+  const worker = new Worker("./src/worker.js", {
     workerData: {
       cpu: i,
     },
