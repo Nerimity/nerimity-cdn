@@ -1,15 +1,19 @@
-import { Worker } from "node:worker_threads";
+import cluster from "node:cluster";
 import { cpus } from "node:os";
-
 import { createFolders } from "./createFolders.js";
-createFolders();
 
-const cpuCount = cpus().length;
+if (cluster.isPrimary) {
+  createFolders();
+  const cpuCount = cpus().length;
 
-for (let i = 0; i < cpuCount; i++) {
-  const worker = new Worker("./src/worker.js", {
-    workerData: {
-      cpu: i,
-    },
+  for (let i = 0; i < cpuCount; i++) {
+    cluster.fork();
+  }
+
+  cluster.on("exit", (worker, code, signal) => {
+    console.log(`Worker process ${worker.process.pid} died. Restarting...`);
+    cluster.fork();
   });
+} else {
+  import("./worker.js");
 }
