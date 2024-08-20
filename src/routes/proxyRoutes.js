@@ -10,7 +10,7 @@ import { getMetadata } from "../sharp.js";
 const proxyRouter = Router();
 
 proxyRouter.get("/proxy/:imageUrl/:filename", async (req, res) => {
-  res.header("Cache-Control", "public, max-age=31536000");
+  res.header("Cache-Control", "public, max-age=1800");
   res.header("Access-Control-Allow-Origin", "https://nerimity.com");
 
   const unsafeImageUrl = decodeURIComponent(req.params.imageUrl);
@@ -39,7 +39,7 @@ proxyRouter.get("/proxy/:imageUrl/:filename", async (req, res) => {
         return res.status(403).end();
       }
 
-      res.set("Cache-Control", "public, max-age=31536000");
+      res.set("Cache-Control", "public, max-age=1800");
       res.set("Accept-Ranges", "bytes");
       res.header("Content-Type", "image/webp");
 
@@ -51,7 +51,7 @@ proxyRouter.get("/proxy/:imageUrl/:filename", async (req, res) => {
 });
 
 proxyRouter.get("/proxy-dimensions", async (req, res) => {
-  res.header("Cache-Control", "public, max-age=31536000");
+  res.header("Cache-Control", "public, max-age=1800");
 
   const unsafeImageUrl = req.query.url;
   const secret = req.query.secret;

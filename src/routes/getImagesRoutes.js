@@ -46,7 +46,7 @@ getImagesRouter.get("/*", async (req, res, next) => {
 
   const { stream, mime } = await getMimeType(inStream);
 
-  res.set("Cache-Control", "public, max-age=31536000");
+  res.set("Cache-Control", "public, max-age=1800");
   res.set("Accept-Ranges", "bytes");
   res.set("Content-Type", mime || "image/webp");
 
@@ -68,7 +68,7 @@ function headerControl(res, path) {
     );
     return;
   }
-  res.set("Cache-Control", "public, max-age=31536000");
+  res.set("Cache-Control", "public, max-age=1800");
 }
 
 export { getImagesRouter };
