@@ -31,7 +31,7 @@ proxyRouter.get("/proxy/:imageUrl/:filename", async (req, res) => {
   }
   res.header("Content-Type", mime);
 
-  const protocol = unsafeImageUrl.startsWith("https") ? https : http;
+  const protocol = urlRes.url.startsWith("https") ? https : http;
 
   protocol.get(urlRes.url, async (imageRes) => {
     if (type === "webp") {
