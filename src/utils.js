@@ -32,8 +32,21 @@ export function isUrl(url) {
   }
 }
 
-export async function getMimeByUrl(url) {
-  const res = await fetch(url).catch((err) => console.error(err));
+export async function fetchHeaders(url) {
+  const res = await fetch(url, {
+    method: "HEAD",
+    redirect: "follow",
+    follow: 4,
+  }).catch(() => {});
+  if (!res) return null;
+  return res;
+}
+
+/**
+ * @param {Response | undefined | null} res
+ * @returns {Promise<string | null>}
+ */
+export async function getMimeByUrl(res) {
   if (!res) return null;
   const type = res.headers.get("content-type");
   return type;
