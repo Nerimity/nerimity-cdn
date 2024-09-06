@@ -34,7 +34,6 @@ export function isUrl(url) {
 
 export async function fetchHeaders(url) {
   const res = await fetch(url, {
-    method: "HEAD",
     redirect: "follow",
     follow: 4,
   }).catch(() => {});
