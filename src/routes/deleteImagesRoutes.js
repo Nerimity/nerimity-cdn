@@ -9,7 +9,7 @@ import config from "../config.js";
 const deleteImagesRouter = Router();
 
 // This runs in a interval in nerimity-server when user has deleted their account
-deleteImagesRouter.delete("/attachments/batch", json(), async (req, res) => {
+deleteImagesRouter.delete("/batch", json(), async (req, res) => {
   const { secret, paths } = req.body;
   if (secret !== config.SECRET) {
     return res.status(403).json(Errors.INVALID_SECRET());
